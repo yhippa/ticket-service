@@ -1,27 +1,17 @@
 package io.github.yhippa;
 
 import io.github.yhippa.entities.SeatHold;
-import io.github.yhippa.entities.Venue;
 import io.github.yhippa.services.TicketService;
-import io.github.yhippa.services.TicketServiceImpl;
-import org.junit.Before;
+import io.github.yhippa.services.TicketServiceInMemoryImpl;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
-/**
- * Created by richardyhip on 3/29/17.
- */
 public class TicketServiceTest {
-    private TicketService testTicketService = new TicketServiceImpl();
-    private final static int SEAT_CAPACITY = 30;
+    private TicketService testTicketService = new TicketServiceInMemoryImpl();
+    private final static int SEAT_CAPACITY = 100;
     private int seatsToHold;
     private final static String CUSTOMER_EMAIL_ADDRESS = "test.customer@example.org";
-
-    @Before
-    public void setup() {
-
-    }
 
     @Test
     public void testNumSeatsAvailable() {
@@ -32,16 +22,19 @@ public class TicketServiceTest {
     public void testFindAndHoldSeats() {
         seatsToHold = 5;
         SeatHold seatsHeld = testTicketService.findAndHoldSeats(seatsToHold, CUSTOMER_EMAIL_ADDRESS);
-        System.out.println(seatsHeld);
-        seatsHeld = testTicketService.findAndHoldSeats(5, CUSTOMER_EMAIL_ADDRESS);
-        System.out.println(seatsHeld);
-        seatsHeld = testTicketService.findAndHoldSeats(8, CUSTOMER_EMAIL_ADDRESS);
-        System.out.println(seatsHeld);
-        assertEquals("failure - seats available do not account for initial capacity less two reserved seats", 8, seatsHeld.getSeatNumbersHeld().size());
+        assertEquals("failure - seats available do not account for initial capacity less two reserved seats", seatsToHold, seatsHeld.getSeatNumbersHeld().size());
     }
 
     @Test
     public void testReserveSeats() throws Exception {
-        assertEquals("failure - couldn't reserve seats", "RESERVED", testTicketService.reserveSeats(1, CUSTOMER_EMAIL_ADDRESS));
+        SeatHold seatsHeld = testTicketService.findAndHoldSeats(8, CUSTOMER_EMAIL_ADDRESS);
+        assertEquals("failure - couldn't reserve seats", "ABCD0", testTicketService.reserveSeats(seatsHeld.getSeatHoldId(), CUSTOMER_EMAIL_ADDRESS));
+    }
+
+    @Test
+    public void testUserMustUseCorrectHoldToReserveTicket() throws Exception {
+        SeatHold customerASeatHold = testTicketService.findAndHoldSeats(8, "customer.a@example.org");
+        SeatHold customerBSeatHold = testTicketService.findAndHoldSeats(8, "customer.b@example.org");
+        assertEquals("failure - customer B able to reserve seats", "INVALID", testTicketService.reserveSeats(customerASeatHold.getSeatHoldId(), "customer.b@example.org"));
     }
 }

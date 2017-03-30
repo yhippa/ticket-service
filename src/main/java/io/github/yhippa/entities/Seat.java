@@ -9,13 +9,7 @@ import static io.github.yhippa.enums.HoldStatus.AVAILABLE;
  */
 public class Seat {
     private HoldStatus availability;
-
-    @Override
-    public String toString() {
-        return "Seat{" +
-                "availability=" + availability +
-                '}';
-    }
+    private int seatHoldId;
 
     public Seat() {
         availability = AVAILABLE;
@@ -27,5 +21,21 @@ public class Seat {
 
     public void setAvailability(HoldStatus availability) {
         this.availability = availability;
+    }
+
+    public int getSeatHoldId() {
+        return seatHoldId;
+    }
+
+    public void setSeatHoldId(int seatHoldId) {
+        this.seatHoldId = seatHoldId;
+    }
+
+    @Override
+    public String toString() {
+        return "Seat{" +
+                "availability=" + availability +
+                ", seatHoldId=" + seatHoldId +
+                '}';
     }
 }

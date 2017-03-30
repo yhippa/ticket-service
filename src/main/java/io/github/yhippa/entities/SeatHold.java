@@ -1,19 +1,24 @@
 package io.github.yhippa.entities;
 
+import io.github.yhippa.enums.Validity;
+
 import java.util.List;
 
 /**
  * Created by richardyhip on 3/28/17.
  */
 public class SeatHold {
-    private static long idGenerator = 0;
-    private long seatHoldId;
+    private static int idGenerator = 1;
+    private int seatHoldId;
+    private List<Integer> seatNumbersHeld;
+    private String emailAddress;
+    private Validity validity;
 
-    public long getSeatHoldId() {
+    public int getSeatHoldId() {
         return seatHoldId;
     }
 
-    public void setSeatHoldId(long seatHoldId) {
+    public void setSeatHoldId(int seatHoldId) {
         this.seatHoldId = seatHoldId;
     }
 
@@ -33,13 +38,13 @@ public class SeatHold {
         this.emailAddress = emailAddress;
     }
 
-    private List<Integer> seatNumbersHeld;
-    private String emailAddress;
+
 
     public SeatHold(List<Integer> seatNumbersHeld, String emailAddress) {
         seatHoldId = idGenerator++;
         this.seatNumbersHeld = seatNumbersHeld;
         this.emailAddress = emailAddress;
+        this.validity = Validity.VALID;
     }
 
     @Override
@@ -49,5 +54,13 @@ public class SeatHold {
                 ", seatNumbersHeld=" + seatNumbersHeld +
                 ", emailAddress='" + emailAddress + '\'' +
                 '}';
+    }
+
+    public Validity getValidity() {
+        return validity;
+    }
+
+    public void setValidity(Validity validity) {
+        this.validity = validity;
     }
 }
