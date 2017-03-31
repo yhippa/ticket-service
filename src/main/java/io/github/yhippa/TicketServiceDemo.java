@@ -12,46 +12,43 @@ import java.util.logging.Logger;
 public class TicketServiceDemo {
     private final static Logger LOGGER = Logger.getLogger(TicketServiceDemo.class.getName());
     public static void main( String[] args ) {
-        TicketService ticketService = new TicketServiceInMemoryImpl();
-        LOGGER.info("Seats available: " + ticketService.numSeatsAvailable());
+        TicketServiceInMemoryImpl ticketService = new TicketServiceInMemoryImpl();
+        LOGGER.info("Initial seats available: " + ticketService.numSeatsAvailable());
+        LOGGER.info("Initial seating chart:");
+        ticketService.printSeatingChart();
         List<SeatHold> seatHolds = new ArrayList<>();
 
-        // Lambda Runnable
         Runnable holdSeats = () -> {
-            SeatHold seatHold = ticketService.findAndHoldSeats(ThreadLocalRandom.current().nextInt(1, 8), "user" + ThreadLocalRandom.current().nextInt(0, 99999) + "@example.org");
-            LOGGER.info("Seat hold: " + seatHold);
-            seatHolds.add(seatHold);
-
+            synchronized (seatHolds) {
+                SeatHold seatHold = ticketService.findAndHoldSeats(ThreadLocalRandom.current().nextInt(1, 8), "user" + ThreadLocalRandom.current().nextInt(0, 99999) + "@example.org");
+                seatHolds.add(seatHold);
+            }
         };
 
         Runnable reserveSeats = () -> {
-            for (SeatHold seatHold : seatHolds) {
-                if (ThreadLocalRandom.current().nextInt(2) == 0) {
-                    String reservationCode = ticketService.reserveSeats(seatHold.getSeatHoldId(), seatHold.getEmailAddress());
-                    LOGGER.info("Reservation code: " + reservationCode);
+            synchronized (seatHolds) {
+                for (SeatHold seatHold : seatHolds) {
+                    if (ThreadLocalRandom.current().nextInt(2) == 0) {
+                        LOGGER.info("Reserving seat hold id " + seatHold.getSeatHoldId() + " for customer " + seatHold.getEmailAddress());
+                        String reservationCode = ticketService.reserveSeats(seatHold.getSeatHoldId(), seatHold.getEmailAddress());
+                        LOGGER.info(seatHold.getSeatHoldId() + " reservation result " + reservationCode);
+                    }
                 }
             }
         };
 
         // start the thread
-        LOGGER.info("Hold seats for 100 users:");
+        LOGGER.info("Simulating ticket demand for 100 customers...");
         for (int i = 0; i < 100; i++) {
             new Thread(holdSeats).start();
         }
 
-        LOGGER.info("Wait 2 seconds:");
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        LOGGER.info("Reserving seats...");
+        LOGGER.info("Random 50% of customers trying to reserve seats...");
         new Thread(reserveSeats).start();
 
-        LOGGER.info("Wait 10 seconds...");
+
         try {
-            Thread.sleep(10000);
+            Thread.sleep(5000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -61,15 +58,7 @@ public class TicketServiceDemo {
             new Thread(holdSeats).start();
         }
 
-        LOGGER.info("Wait 2 seconds...:");
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-
-        LOGGER.info("Reserving held seats...:");
+        LOGGER.info("Random 50% of customers trying to reserve seats...");
         new Thread(reserveSeats).start();
 
         try {
@@ -77,5 +66,10 @@ public class TicketServiceDemo {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        LOGGER.info("Final seats available: " + ticketService.numSeatsAvailable());
+        LOGGER.info("Final seating chart:");
+        ticketService.printSeatingChart();
+        ticketService.shutdown();
     }
 }

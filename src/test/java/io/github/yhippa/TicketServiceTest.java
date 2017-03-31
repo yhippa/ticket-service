@@ -9,7 +9,7 @@ import static org.junit.Assert.assertEquals;
 
 public class TicketServiceTest {
     private TicketService testTicketService = new TicketServiceInMemoryImpl();
-    private final static int SEAT_CAPACITY = 100;
+    private final static int SEAT_CAPACITY = 50;
     private int seatsToHold;
     private final static String CUSTOMER_EMAIL_ADDRESS = "test.customer@example.org";
 
@@ -28,7 +28,7 @@ public class TicketServiceTest {
     @Test
     public void testReserveSeats() throws Exception {
         SeatHold seatsHeld = testTicketService.findAndHoldSeats(8, CUSTOMER_EMAIL_ADDRESS);
-        assertEquals("failure - couldn't reserve seats", "ABCD0", testTicketService.reserveSeats(seatsHeld.getSeatHoldId(), CUSTOMER_EMAIL_ADDRESS));
+        assertEquals("failure - couldn't reserve seats", "RUNDMC0", testTicketService.reserveSeats(seatsHeld.getSeatHoldId(), CUSTOMER_EMAIL_ADDRESS));
     }
 
     @Test

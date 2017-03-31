@@ -2,9 +2,6 @@ package io.github.yhippa.services;
 
 import io.github.yhippa.entities.SeatHold;
 
-/**
- * Created by richardyhip on 3/28/17.
- */
 public interface TicketService {
     /**
      * The number of seats in the venue that are neither held nor reserved

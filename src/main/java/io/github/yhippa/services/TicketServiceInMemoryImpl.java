@@ -6,6 +6,7 @@ import io.github.yhippa.enums.HoldStatus;
 import io.github.yhippa.enums.Validity;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import java.util.concurrent.Executors;
@@ -14,11 +15,10 @@ import java.util.concurrent.TimeUnit;
 
 public class TicketServiceInMemoryImpl implements TicketService {
     private final static Logger LOGGER = Logger.getLogger(TicketServiceInMemoryImpl.class.getName());
-    private static final int SEAT_CAPACITY = 100;
+    private static final int SEAT_CAPACITY = 50;
     private static final String TICKET_PREFIX = "RUNDMC";
-    private static int ticketIdGenerator = 0;
+    private static AtomicInteger ticketIdGenerator = new AtomicInteger();
     private static final int HOLD_TIME = 5;
-
     private Map<Integer, Seat> seatingChart = new LinkedHashMap<>();
     private Map<Integer, SeatHold> seatHolds = new LinkedHashMap<>();
     private final ScheduledExecutorService scheduler =
@@ -37,7 +37,7 @@ public class TicketServiceInMemoryImpl implements TicketService {
 
     public synchronized SeatHold findAndHoldSeats(int numSeats, String customerEmail) {
         List<Integer> seatsHeld = new ArrayList<>();
-        // create a new seatHold to get id
+        // create a new SeatHold to get id
         SeatHold seatHold = new SeatHold(seatsHeld, customerEmail);
 
         seatingChart.entrySet().stream().filter(seat -> HoldStatus.AVAILABLE.equals(seat.getValue().getAvailability())).sorted(Comparator.comparingInt(Map.Entry::getKey)).limit(numSeats).forEach(seat -> {
@@ -52,35 +52,45 @@ public class TicketServiceInMemoryImpl implements TicketService {
                 if (seatingChart.get(seat).getAvailability().equals(HoldStatus.HELD)) {
                     seatingChart.get(seat).setAvailability(HoldStatus.AVAILABLE);
                     seatingChart.get(seat).setSeatHoldId(0);
-                    LOGGER.info(seatHold.getSeatHoldId() + " released");
+                    LOGGER.info("SeatHold " + seatHold.getSeatHoldId() + ", seat " + seat + ", released due to timeout");
                 } else {
-                    LOGGER.info("Seat was booked within time");
+                    LOGGER.info("SeatHold " + seatHold.getSeatHoldId() + ", seat " + seat + ", was booked within time");
                 }
             }
             seatHold.setValidity(Validity.INVALID);
         };
         scheduler.schedule(holdTimeout, HOLD_TIME, TimeUnit.SECONDS);
         seatHolds.put(seatHold.getSeatHoldId(), seatHold);
+        LOGGER.info("Seat hold: " + seatHold);
         return seatHold;
     }
 
     public void printSeatingChart() {
-        seatingChart.entrySet().stream().forEach(map -> System.out.println(map.getKey() + ", " + map.getValue()));
+        seatingChart.entrySet().forEach(map -> LOGGER.info(map.getKey() + ", " + map.getValue()));
+    }
+
+    public void shutdown() {
+        scheduler.shutdown();
     }
 
     public synchronized String reserveSeats(int seatHoldId, String customerEmail) {
         SeatHold hold = seatHolds.get(seatHoldId);
         List<Integer> seatsHeld = hold.getSeatNumbersHeld();
+        String result;
         if (hold.getEmailAddress().equals(customerEmail) && (seatHoldId == hold.getSeatHoldId()) && (seatsHeld.size() > 0) && (hold.getValidity() == Validity.VALID)) {
             for (int seatNumber : seatsHeld) {
                 Seat seat = seatingChart.get(seatNumber);
-                if (seat.getAvailability() == HoldStatus.HELD) {
+                if (seat.getAvailability().equals(HoldStatus.HELD)) {
                     seat.setAvailability(HoldStatus.RESERVED);
                     seat.setSeatHoldId(hold.getSeatHoldId());
+                    seatHolds.get(seatHoldId).setValidity(Validity.INVALID);
                 }
             }
-            return TICKET_PREFIX + ticketIdGenerator++;
+            result = TICKET_PREFIX + ticketIdGenerator.getAndIncrement();
+        } else {
+            result =  "INVALID";
         }
-        return "INVALID";
+        LOGGER.info("Reservation status for seatHoldId " + seatHoldId + " and customer " + customerEmail + ": " + result);
+        return result;
     }
 }

@@ -4,9 +4,6 @@ import io.github.yhippa.enums.Validity;
 
 import java.util.List;
 
-/**
- * Created by richardyhip on 3/28/17.
- */
 public class SeatHold {
     private static int idGenerator = 1;
     private int seatHoldId;
@@ -37,8 +34,6 @@ public class SeatHold {
     public void setEmailAddress(String emailAddress) {
         this.emailAddress = emailAddress;
     }
-
-
 
     public SeatHold(List<Integer> seatNumbersHeld, String emailAddress) {
         seatHoldId = idGenerator++;
